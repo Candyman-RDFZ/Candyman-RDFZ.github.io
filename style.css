@@ -39,17 +39,16 @@ a:hover {
     background-color: #ECEEF2;
     width: 65%;
     margin: 0 auto;
-    margin-top: 40px;
+    margin-top: 0;
     margin-bottom: -4em;
-    padding: 2em 0;
+    padding: 1.5em 0;
     position: relative;
-    z-index: 1;
 }
 
 #entry {
     width: 90%;
     margin: 0 auto;
-    padding: 1em 0 3em 0;
+    padding: 0.5em 0 2em 0;
 }
 
 footer {
