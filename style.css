@@ -43,6 +43,25 @@ a:hover {
   text-decoration: none;
 }
 
+#entry-wrapper {
+    border: 2px solid #9AAAC8;
+    background-color: #ECEEF2;
+    width: 75%;
+    max-width: 960px;
+    margin: 0 auto;
+    margin-top: -3em;
+    margin-bottom: -4em;
+    padding: 2em 0;
+    position: relative;
+    z-index: 1;
+}
+
+#entry {
+    width: 90%;
+    margin: 0 auto;
+    padding: 1em 0 3em 0;
+}
+
 footer {
     position: absolute;
     bottom: 0;
