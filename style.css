@@ -3,6 +3,10 @@ html, body {
     margin: 0;
 }
 
+background {
+    color: #8891DE;
+}
+
 body {
     display: flex;
     flex-direction: column;
