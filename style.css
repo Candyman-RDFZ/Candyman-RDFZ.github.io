@@ -11,11 +11,13 @@ body {
 }
 
 nav {
-    background-color: #EBC955;
-    padding: 15px 0 10px 0;
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 10000;
+    left: 0;
+    width: 100%;
+    background-color: #EBC955;
+    padding: 10px 0;
+    z-index: 9999;
 }
 
 nav ul {
