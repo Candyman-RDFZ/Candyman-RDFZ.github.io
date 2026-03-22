@@ -11,6 +11,7 @@ body {
 }
 
 nav {
+    position: sticky;
     background-color: #EBC955;
     padding: 15px 0 10px 0;
 }
