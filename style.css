@@ -3,15 +3,12 @@ html, body {
     margin: 0;
 }
 
-background {
-    color: #8891DE;
-}
-
 body {
     display: flex;
     flex-direction: column;
     font-family: Arial, sans-serif;
     line-height: 1.6;
+    background-color: #8891DE;
 }
 
 a {
