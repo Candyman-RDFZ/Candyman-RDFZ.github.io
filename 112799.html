@@ -1,14 +1,27 @@
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
 <head>
-  <title>112799</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Get Input Value</title>
 </head>
-
 <body style="text-align: center; padding-top: 200px;">
 
-<span style="font-weight: bold; font-size: 120pt; font-family: 
-Arial, sans-serif; text-decoration: none; color: black;">
-112799
-</span>
+  <input type="text" id="username" placeholder="Enter CP number">
+  <button id="submitBtn">Submit</button>
+  <p id="displayText" style="font-weight: bold; font-size: 120pt; font-family: 
+Arial, sans-serif; text-decoration: none; color: black;"></p>
+
+  <script>
+    const button = document.getElementById('submitBtn');
+    const inputField = document.getElementById('username');
+    const displayArea = document.getElementById('displayText');
+
+    button.addEventListener('click', function() {
+      // Grab the content
+      const userInput = inputField.value;
+      
+      // Do something with the content
+      displayArea.textContent = `${userInput}99!`;
+    });
+  </script>
 </body>
 </html>
