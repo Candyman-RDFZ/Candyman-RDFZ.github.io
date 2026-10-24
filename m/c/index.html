@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>折纸系数测定仪 —— 用实验数据反推 c</title>
+<style>
+  :root{
+    --ink:#1f3564; --ink2:#44598c; --accent:#0e9e9e; --accent2:#e08a2e;
+    --red:#ce2e2e; --green:#2e9e5b; --body:#333842; --muted:#8a93a5;
+    --line:#d8dee8; --paper:#f7f9fc;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#eef2f8;color:var(--body);
+    font-family:"Microsoft YaHei","PingFang SC",sans-serif;font-size:16px;line-height:1.7}
+  header{background:var(--ink);color:#fff;padding:18px 26px 14px;border-bottom:5px solid var(--accent)}
+  header h1{margin:0;font-size:23px}
+  header p{margin:6px 0 0;font-size:13.5px;color:#c8d4ea}
+  nav{display:flex;gap:2px;background:var(--ink2);padding:0 16px;flex-wrap:wrap}
+  nav button{background:transparent;border:0;color:#cfd9ec;font-size:15.5px;padding:12px 20px;
+    cursor:pointer;font-family:inherit;border-bottom:3px solid transparent}
+  nav button.on{color:#fff;background:rgba(255,255,255,.08);border-bottom-color:var(--accent2);font-weight:700}
+  main{max-width:1200px;margin:0 auto;padding:20px 18px 60px}
+  section{display:none} section.on{display:block}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px;
+    margin-bottom:16px;box-shadow:0 1px 3px rgba(31,53,100,.06)}
+  .card h2{margin:0 0 4px;font-size:18px;color:var(--ink)}
+  .hint{font-size:13.5px;color:var(--muted);margin:2px 0 12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  label{display:block;font-size:14px;margin:8px 0 4px;color:var(--ink2);font-weight:700}
+  input[type=number],input[type=text]{width:100%;padding:7px 9px;font-size:15px;
+    font-family:inherit;border:1px solid var(--line);border-radius:6px;background:#fdfefe}
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:center}
+  th{background:#e8eef8;color:var(--ink);font-weight:700}
+  td input{text-align:center}
+  tr.bad td{background:#fdecec}
+  tr.ok td{background:#eef8f1}
+  button.act{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 18px;
+    font-size:15px;font-family:inherit;font-weight:700;cursor:pointer;margin:10px 6px 0 0}
+  button.act:hover{background:#0b8484}
+  button.act.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  button.act.small{padding:6px 12px;font-size:13.5px}
+  button.del{background:#fff;color:var(--red);border:1px solid var(--line);border-radius:6px;
+    padding:2px 8px;cursor:pointer;font-family:inherit}
+  canvas{width:100%;height:auto;display:block;background:#fff;border-radius:8px}
+  .out{margin-top:12px;padding:14px 16px;background:var(--paper);border-radius:9px;
+    border-left:5px solid var(--accent)}
+  .out.warn{border-left-color:var(--accent2);background:#fff8ef}
+  .out.bad{border-left-color:var(--red);background:#fdecec}
+  .out.good{border-left-color:var(--green);background:#eef8f1}
+  .big{font-size:24px;font-weight:700;color:var(--ink)}
+  .mono{font-family:"Cambria Math","Times New Roman",serif;font-size:18px;color:var(--ink)}
+  .pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:13px;
+    background:var(--accent);color:#fff;margin:0 4px}
+  .pill.o{background:var(--accent2)} .pill.r{background:var(--red)} .pill.g{background:var(--green)}
+  .note{font-size:13px;color:var(--muted);margin-top:6px}
+  textarea{width:100%;height:150px;font-family:inherit;font-size:13.5px;padding:10px;
+    border:1px solid var(--line);border-radius:8px;background:#fdfefe;line-height:1.6}
+
+  /* ============ 以下为实时同步新增，原有样式一字未改 ============ */
+  .syncbar{max-width:1200px;margin:14px auto -4px;padding:0 18px;display:flex;
+    align-items:center;gap:10px;font-size:14.5px;color:#44598c;flex-wrap:wrap}
+  .syncbar .dot{width:11px;height:11px;border-radius:50%;background:#8a93a5;flex:none}
+  .syncbar .dot.ok{background:#2e9e5b}
+  .syncbar .dot.bad{background:#ce2e2e}
+  .syncbar .spacer{flex:1}
+  .rolebadge{padding:2px 12px;border-radius:20px;font-size:13.5px;color:#fff;background:#8a93a5}
+  .rolebadge.teacher{background:#e08a2e}
+  .rolebadge.student{background:#0e9e9e}
+  .grouppick{display:flex;gap:10px;flex-wrap:wrap}
+  .grouppick button{flex:1;min-width:84px;padding:14px 0;font-size:19px;font-weight:700;
+    font-family:inherit;color:#1f3564;background:#fff;border:2px solid #d8dee8;
+    border-radius:10px;cursor:pointer}
+  .grouppick button:hover{border-color:#0e9e9e}
+  .grouppick button.on{background:#0e9e9e;color:#fff;border-color:#0e9e9e}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:760px){.grid3{grid-template-columns:1fr}}
+  .submsg{margin-left:12px;font-size:14.5px;font-weight:700}
+  .submsg.ok{color:#2e9e5b}
+  .submsg.bad{color:#ce2e2e}
+  tr.mine td{background:#e9f8f6}
+</style>
+</head>
+<body>
+<header>
+  <h1>折纸系数测定仪</h1>
+  <p>模型：L/t ≥ c · 4ⁿ　｜　输入实验数据 → 定出 c 的范围 → 预测需要多长的纸</p>
+</header>
+
+<nav>
+  <button class="on" data-t="t1">① 实验数据</button>
+  <button data-t="t2">② 求 c 的范围</button>
+  <button data-t="t3">③ 检验 c</button>
+  <button data-t="t4">④ 预测器</button>
+</nav>
+
+<main>
+
+<!-- ==================== 同步状态条（新增） ==================== -->
+<div class="syncbar">
+  <span class="dot" id="syncDot"></span>
+  <span id="syncText">正在连接服务器…</span>
+  <span class="spacer"></span>
+  <span id="syncRole" class="rolebadge">连接中</span>
+</div>
+
+<!-- ==================== 组号选择（新增） ==================== -->
+<div class="card" id="groupCard" style="border-left:6px solid #e08a2e">
+  <h2 id="groupTitle">你是第几组？</h2>
+  <p class="hint">点一下就行，选错了随时可以改。</p>
+  <div id="groupPick" class="grouppick"></div>
+</div>
+
+<!-- ==================== ① 数据录入 ==================== -->
+<section id="t1" class="on">
+
+  <!-- ==================== 提交表单（新增） ==================== -->
+  <div class="card" id="submitCard" style="border-left:6px solid #0e9e9e">
+    <h2>提交我这一组的数据</h2>
+    <p class="hint">
+      一次提交一条：<b>一条长度 L、厚度 t 的纸，最多能折 n 次</b>。
+      同一个组可以提交好几条——测了几个长度就提交几条，提交后全班立刻能看到。
+      n 要填「折不动之前完成的次数」，也就是它<b>做不到</b> n+1 次。
+    </p>
+    <div class="grid3">
+      <div><label>长度 L (mm)</label>
+        <input type="number" id="fL" step="any" min="0" placeholder="例如 210"></div>
+      <div><label>单层厚 t (mm)</label>
+        <input type="number" id="fT" step="any" min="0" placeholder="例如 0.10"></div>
+      <div><label>最多折几次 n</label>
+        <input type="number" id="fN" step="1" min="0" placeholder="例如 6"></div>
+    </div>
+    <button class="act" id="submitBtn">提交这一条</button>
+    <span id="submitMsg" class="submsg"></span>
+    <div class="note">厚度不确定就用「一叠总厚 ÷ 张数」量。纸条宽度统一，全程同一方向折。</div>
+  </div>
+
+  <div class="card" style="display:none;border-left:6px solid #e08a2e">
+    <h2>批量导入：把数据粘贴进来</h2>
+    <p class="hint">
+      老师念、同学报、或者从别处抄来的一整张表，都可以直接粘进下面的框里。
+      支持 <b>Markdown 表格</b>、<b>逗号／制表符分隔</b>、<b>紧凑写法</b> 三种形式，粘完自动预览。
+    </p>
+    <textarea id="pasteBox" placeholder="把数据粘到这里，例如：
+
+| 纸样 | 长度 L (mm) | 厚度 t (mm) | 折数 n |
+|------|------------|------------|--------|
+| A4打印纸 | 140 | 0.10 | 5 |
+| A4打印纸 | 215 | 0.10 | 6 |
+
+或者紧凑写：
+A4打印纸 0.10: 140/5 165/5 190/5 215/6
+拷贝纸 0.025: 150/6 200/7 270/7 360/8"></textarea>
+
+    <div class="grid2" style="margin-top:10px">
+      <div>
+        <label>统一厚度 t (mm)　<span style="font-weight:400;color:#8a93a5">某行没写厚度时用它</span></label>
+        <input type="number" id="pasteT" value="0.10" step="0.001" min="0.001">
+      </div>
+      <div>
+        <div class="note" id="pasteStat" style="margin-top:22px">还没有内容。</div>
+      </div>
+    </div>
+
+    <button class="act" id="pasteAppend">导入（追加到现有数据）</button>
+    <button class="act ghost" id="pasteReplace">导入（清空后替换）</button>
+    <button class="act ghost" id="pasteClear">清空粘贴框</button>
+
+    <div id="pastePreview" style="margin-top:14px"></div>
+
+    <details style="margin-top:12px">
+      <summary style="cursor:pointer;color:#44598c;font-size:14px">格式说明与容错规则</summary>
+      <div class="note" style="margin-top:8px;line-height:1.9">
+        <b>认列的方式</b>：如果粘进来的内容里有一行表头（含「长度 / 厚度 / 折数」这类字），
+        就<b>按表头认列</b>，列的顺序可以任意调换；没有表头时，默认按
+        <span class="mono">名称, 长度L, 厚度t, 折数n</span> 的顺序读。<br>
+        <b>分隔符</b>：竖线 <span class="mono">|</span>、英文逗号 <span class="mono">,</span>、
+        中文逗号 <span class="mono">，</span>、分号、制表符、两个以上空格，统统可以。<br>
+        <b>可以省略的</b>：名称可以不写；厚度可以不写（用上面的「统一厚度」）；
+        <span class="mono">L/t</span> 这一列会自动忽略；行首的序号列会自动忽略。<br>
+        <b>厚度提示行</b>：像「A4 打印纸（单层厚 t = 0.10 mm）」这样的整行文字，
+        会被当成<b>厚度与纸名的提示</b>，不会当成数据。<br>
+        <b>以 <span class="mono">#</span> 开头的行</b>当注释跳过。<br>
+        <b>导入后仍可修改</b>：导入的数据会出现在下面的表格里，可以逐格改、可以删除，和手动录入完全一样。
+      </div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>全班数据（实时同步）</h2>
+    <p class="hint">
+      每一行记一条实验：<b>一条长度 L、厚度 t 的纸，最多能折 n 次</b>。
+      n 是「折不动之前完成的次数」——即它<b>做不到</b> n+1 次。
+      <span id="tblNote"></span>
+    </p>
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th style="width:22%">组别</th>
+          <th style="width:17%">长度 L (mm)</th>
+          <th style="width:17%">单层厚 t (mm)</th>
+          <th style="width:14%">最多折几次 n</th>
+          <th style="width:16%">L/t</th>
+          <th style="width:14%">操作</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <button class="act" id="addRow" style="display:none">＋ 加一行</button>
+    <button class="act ghost" id="loadDemo" style="display:none">载入示例数据</button>
+    <button class="act ghost" id="clearAll" style="display:none">清空全部数据</button>
+    <div class="note">
+      提示：纸厚用「一叠总厚 ÷ 张数」测；纸条宽度统一；全程同一个人、同一方向折。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>每条数据单独说了什么</h2>
+    <p class="hint">一条数据同时给出 c 的一个<b>上界</b>和一个<b>下界</b>——这就是它能提供的信息量。</p>
+    <div id="rowInfo"></div>
+  </div>
+</section>
+
+<!-- ==================== ② 求 c ==================== -->
+<section id="t2">
+  <div class="card">
+    <h2>c 的范围</h2>
+    <p class="hint">每条数据给一个区间（宽度正好 4 倍）；所有区间的<b>公共部分</b>才是 c 的取值范围。</p>
+    <canvas id="cvBand" width="1120" height="360"></canvas>
+    <div class="out" id="outC"></div>
+    <div class="out warn" id="outC2"></div>
+  </div>
+  <div class="card">
+    <h2>还想更准？差的是什么数据</h2>
+    <div id="advice"></div>
+  </div>
+</section>
+
+<!-- ==================== ③ 检验 c ==================== -->
+<section id="t3">
+  <div class="card">
+    <h2>① 回验：用定出的 c 去预测每一条数据</h2>
+    <p class="hint">把 c 的范围代回模型，逐条算出「应该能折几次」，和实测对照。全部对得上，c 才是可信的。</p>
+    <div id="verify"></div>
+  </div>
+  <div class="card">
+    <h2>② c 的数值是否合理</h2>
+    <p class="hint">c 把折痕的贴合程度打包进去了，正常情况下是一个 1 量级的数——不该是 20，也不该是 0.01。</p>
+    <canvas id="cvScale" width="1120" height="210"></canvas>
+    <div class="out" id="outSanity"></div>
+  </div>
+</section>
+
+<!-- ==================== ④ 预测器 ==================== -->
+<section id="t4">
+  <div class="card" style="border-left:6px solid #0e9e9e">
+    <h2>本次计算使用的 c</h2>
+    <div id="cUsed"></div>
+    <div style="margin-top:12px;border-top:1px dashed #d8dee8;padding-top:12px">
+      <label style="display:flex;align-items:center;gap:8px;font-weight:700">
+        <input type="checkbox" id="manChk" style="width:auto">
+        手动指定 c（不用实测区间，只用一个数算）
+      </label>
+      <div class="grid2">
+        <div>
+          <input type="number" id="manC" value="0.50" step="0.01" min="0.001" disabled>
+        </div>
+        <div class="note" id="manNote">
+          不勾选时，用实测区间的<b>两端</b>各算一次，给出一个范围；同时显示中值的单值结果。
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>正算：要折 n 次，需要多长的纸</h2>
+    <div class="grid2">
+      <div>
+        <label>目标折数 n</label>
+        <input type="number" id="pn" value="8" min="1" max="30" step="1">
+        <label>单层厚 t (mm)</label>
+        <input type="number" id="pt" value="0.10" min="0.001" step="0.01">
+      </div>
+      <div class="out" id="outFwd"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>反算：这么长的纸，能折几次</h2>
+    <div class="grid2">
+      <div>
+        <label>纸长 L (mm)</label>
+        <input type="number" id="pL" value="1200" min="1" step="1">
+        <label>单层厚 t (mm)</label>
+        <input type="number" id="pLt" value="0.10" min="0.001" step="0.01">
+      </div>
+      <div class="out" id="outBack"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>实验结论（可复制进报告）</h2>
+    <textarea id="report" readonly></textarea>
+    <button class="act" id="copyBtn">复制结论</button>
+  </div>
+</section>
+
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const BASE = 4;
+
+/* ---------- 格式化 ---------- */
+function fmt(x, d = 3){
+  if (!isFinite(x)) return "—";
+  if (x !== 0 && (Math.abs(x) >= 1e5 || Math.abs(x) < 1e-3)){
+    const e = Math.floor(Math.log10(Math.abs(x)));
+    return (x / Math.pow(10, e)).toFixed(2) + "×10" + sup(e);
+  }
+  return Number(x.toFixed(d)).toString();
+}
+function sup(n){
+  const map = {"-":"⁻","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"};
+  return String(n).split("").map(c => map[c] || c).join("");
+}
+/* 长度生活化对照 */
+function story(mm){
+  const tab = [
+    ["一个 A4 长边（297 mm）", 297],
+    ["一张课桌长（约 600 mm）", 600],
+    ["一张报纸长边（约 780 mm）", 780],
+    ["教室门高（约 2000 mm）", 2000],
+    ["一层楼高（约 3000 mm）", 3000],
+  ];
+  if (mm < 297) return "比一个 A4 长边还短";
+  for (const [name, v] of tab){
+    if (mm < v) return "约合 " + (mm / v).toFixed(2) + " 个" + name;
+  }
+  return "约 " + (mm / 1000).toFixed(2) + " 米（" + (mm / 3000).toFixed(1) + " 层楼高）";
+}
+
+/* ---------- 数据 ---------- */
+let DATA = [];
+const DEMO = [
+  ["50 mm 纸条", 50, 0.10, 4],
+  ["55 mm 纸条", 55, 0.10, 5],
+  ["200 mm 纸条", 200, 0.10, 5],
+  ["210 mm 纸条", 210, 0.10, 6],
+  ["800 mm 纸条", 800, 0.10, 6],
+  ["830 mm 纸条", 830, 0.10, 7],
+  ["1300 mm 纸条", 1300, 0.10, 7],
+];
+
+function intervalOf(L, t, n, b){
+  const r = L / t;
+  return { lo: r / Math.pow(b, n + 1), hi: r / Math.pow(b, n) };
+}
+function validRows(){
+  return DATA.filter(d => d.L > 0 && d.t > 0 && d.n >= 0 && isFinite(d.L) && isFinite(d.t));
+}
+function intersect(rows, b){
+  let lo = -Infinity, hi = Infinity;
+  for (const d of rows){
+    const it = intervalOf(d.L, d.t, d.n, b);
+    if (it.lo > lo) lo = it.lo;
+    if (it.hi < hi) hi = it.hi;
+  }
+  return { lo, hi, ok: rows.length > 0 && lo < hi };
+}
+
+/* ---------- ① 渲染表格（改为只读 + 实时同步） ---------- */
+function renderTable2(){
+  const tb = $("tbody");
+  tb.innerHTML = "";
+  if (!DATA.length){
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 6; td.className = "note"; td.style.padding = "16px";
+    td.textContent = "还没有数据。在上面「提交我这一组的数据」里填写并提交，全班会立刻看到。";
+    tr.appendChild(td); tb.appendChild(tr);
+    return;
+  }
+  DATA.forEach(d => {
+    const tr = document.createElement("tr");
+    if (d.mine) tr.className = "mine";
+    const vals = [
+      d.name || "—",
+      d.L, d.t, d.n,
+      (d.L > 0 && d.t > 0) ? Number((d.L / d.t).toFixed(0)).toLocaleString() : "—"
+    ];
+    vals.forEach((v, j) => {
+      const td = document.createElement("td");
+      td.textContent = v;
+      if (j === 2 || j === 4) td.style.fontFamily = "Cambria Math,serif";
+      tr.appendChild(td);
+    });
+    const td6 = document.createElement("td");
+    if (ROLE === "teacher"){
+      const b = document.createElement("button");
+      b.className = "del"; b.textContent = "删除";
+      b.onclick = () => serverDel(d.id);
+      td6.appendChild(b);
+    } else if (d.mine){
+      const b = document.createElement("button");
+      b.className = "del"; b.textContent = "撤回";
+      b.onclick = () => serverDel(d.id);
+      td6.appendChild(b);
+    } else {
+      td6.innerHTML = '<span class="note">—</span>';
+    }
+    tr.appendChild(td6);
+    tb.appendChild(tr);
+  });
+}
+
+/* ---------- ① 每条数据说了什么 ---------- */
+function renderRowInfo(){
+  const rows = validRows();
+  const box = $("rowInfo");
+  if (!rows.length){ box.innerHTML = '<div class="note">还没有有效数据。</div>'; return; }
+  let h = '<table><thead><tr><th>纸条</th><th>L/t</th><th>n</th>'
+        + '<th>上界 c ≤ (L/t)/4ⁿ</th><th>下界 c &gt; (L/t)/4ⁿ⁺¹</th><th>单条区间宽度</th></tr></thead><tbody>';
+  for (const d of rows){
+    const r = d.L / d.t, it = intervalOf(d.L, d.t, d.n, BASE);
+    h += `<tr><td>${d.name || "—"}</td><td class="mono">${fmt(r,0)}</td><td>${d.n}</td>`
+       + `<td class="mono">${fmt(it.hi)}</td><td class="mono">${fmt(it.lo)}</td>`
+       + `<td>4.00 倍</td></tr>`;
+  }
+  h += "</tbody></table>";
+  h += '<div class="note">每条数据的区间宽度都是 4 倍——因为“能折 n 次”和“能折 n+1 次”之间本身就差 4 倍。'
+     + '所以只测一条，c 就只能定在 4 倍范围内。<b>必须让不同数据的区间互相错开，交集才会变窄。</b></div>';
+  box.innerHTML = h;
+}
+
+/* ---------- ② 区间图 ---------- */
+function drawBand(rows, lo, hi, ok){
+  const cv = $("cvBand"), g = cv.getContext("2d");
+  const W = cv.width, H = cv.height;
+  g.clearRect(0,0,W,H);
+  if (!rows.length) return;
+  const its = rows.map(d => intervalOf(d.L, d.t, d.n, BASE));
+  let mn = Infinity, mx = -Infinity;
+  its.forEach(it => { mn = Math.min(mn, it.lo); mx = Math.max(mx, it.hi); });
+  mn = Math.log10(mn); mx = Math.log10(mx);
+  const pad = (mx - mn) * 0.08 || 0.1; mn -= pad; mx += pad;
+  const X = c => 150 + (W - 210) * (Math.log10(c) - mn) / (mx - mn);
+
+  // 网格
+  g.strokeStyle = "#eef2f8"; g.lineWidth = 1;
+  for (let e = Math.floor(mn); e <= Math.ceil(mx); e++){
+    for (let m = 1; m < 10; m++){
+      const c = m * Math.pow(10, e);
+      if (Math.log10(c) < mn || Math.log10(c) > mx) continue;
+      const x = X(c);
+      g.beginPath(); g.moveTo(x, 46); g.lineTo(x, H - 46); g.stroke();
+    }
+  }
+  // 交集高亮
+  if (ok){
+    g.fillStyle = "rgba(46,158,91,.16)";
+    g.fillRect(X(lo), 40, X(hi) - X(lo), H - 86);
+    g.strokeStyle = "#2e9e5b"; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(X(lo), H - 46); g.lineTo(X(hi), H - 46); g.stroke();
+  }
+  // 每条数据的区间
+  const rowH = Math.min(30, (H - 120) / rows.length);
+  rows.forEach((d, i) => {
+    const it = its[i];
+    const y = 58 + i * rowH + rowH / 2;
+    const x1 = X(it.lo), x2 = X(it.hi);
+    const bad = ok ? (it.hi < lo || it.lo > hi) : false;
+    g.strokeStyle = bad ? "#ce2e2e" : "#9ec5e8";
+    g.lineWidth = 9; g.lineCap = "butt";
+    g.beginPath(); g.moveTo(x1, y); g.lineTo(x2, y); g.stroke();
+    g.fillStyle = bad ? "#ce2e2e" : "#44598c";
+    g.font = "12.5px 'Microsoft YaHei'"; g.textAlign = "right";
+    g.fillText((d.name || ("数据" + (i + 1))).slice(0, 14), 142, y + 4);
+    g.textAlign = "left";
+    g.fillStyle = "#8a93a5"; g.font = "11.5px 'Cambria Math',serif";
+    g.fillText("[" + fmt(it.lo) + ", " + fmt(it.hi) + "]", x2 + 8, y + 4);
+  });
+  // 坐标刻度
+  g.fillStyle = "#1f3564"; g.font = "bold 13px 'Microsoft YaHei'"; g.textAlign = "left";
+  g.fillText("c 的取值（对数刻度）", 150, 26);
+  g.strokeStyle = "#d8dee8"; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(150, H - 46); g.lineTo(W - 40, H - 46); g.stroke();
+  g.textAlign = "center"; g.font = "12px 'Cambria Math',serif"; g.fillStyle = "#44598c";
+  for (let e = Math.floor(mn) - 1; e <= Math.ceil(mx) + 1; e++){
+    const c = Math.pow(10, e);
+    if (Math.log10(c) < mn || Math.log10(c) > mx) continue;
+    g.fillText(fmt(c), X(c), H - 24);
+  }
+}
+
+function renderC(){
+  const rows = validRows();
+  const cv = $("cvBand");
+  if (rows.length < 1){
+    $("outC").innerHTML = "还没有有效数据。";
+    $("outC2").innerHTML = "";
+    $("advice").innerHTML = "";
+    const g = cv.getContext("2d"); g.clearRect(0,0,cv.width,cv.height);
+    return;
+  }
+  const { lo, hi, ok } = intersect(rows, BASE);
+  drawBand(rows, lo, hi, ok);
+  const out = $("outC"), out2 = $("outC2");
+  if (ok){
+    const w = hi / lo;
+    out.className = "out " + (w < 1.5 ? "good" : "");
+    out.innerHTML =
+      `<div class="big">c ∈ (${fmt(lo)}, ${fmt(hi)}]</div>
+       <div style="margin-top:6px">取中值算，<span class="mono">c ≈ ${fmt((lo + hi) / 2)}</span>；
+       范围宽度 <span class="mono">${w.toFixed(2)}</span> 倍。</div>
+       <div class="note">${w < 1.2 ? "非常紧——数据质量很好，而且边界两侧都测到了。"
+         : w < 2 ? "已经比较紧了，可以用于预测。"
+         : w < 3.5 ? "还偏宽。再在折数变化的边界两侧各补一条，会明显收窄。"
+         : "几乎和单条数据一样宽（4 倍），说明数据没有互相错开——多半是都测在阈值附近。"}</div>`;
+    out2.style.display = "none";
+  } else {
+    out.className = "out bad";
+    out.innerHTML = `<div class="big">数据互相矛盾</div>
+      <div>所有区间的公共部分是空的：下界最大到 <span class="mono">${fmt(lo)}</span>，
+      上界最小只有 <span class="mono">${fmt(hi)}</span>，<span class="mono">${fmt(lo)} &gt; ${fmt(hi)}</span>。</div>`;
+    // 找冲突点
+    const conflicts = [];
+    rows.forEach((d, i) => {
+      const it = intervalOf(d.L, d.t, d.n, BASE);
+      if (it.hi < lo || it.lo > hi) conflicts.push(d.name || ("数据" + (i + 1)));
+    });
+    out2.style.display = "block";
+    out2.innerHTML = `<b>冲突的几条：</b>${conflicts.join("、") || "（见红色条）"}<br>
+      <b>最常见的原因（按可能性排）：</b>
+      ① 折法的判定标准没统一（“折不动”各人标准不同）；
+      ② 纸厚测法不一致（单张千分尺 vs 一叠除张数）；
+      ③ 折的方向没统一（单向折和来回折的规律完全不同）；
+      ④ 用的其实不是同一种纸；
+      ⑤ 模型本身不成立（底数不是 4——去③检验模型看看）。`;
+  }
+  renderAdvice(rows, lo, hi, ok);
+}
+
+function renderAdvice(rows, lo, hi, ok){
+  const box = $("advice");
+  const ns = [...new Set(rows.map(d => d.n))].sort((a,b)=>a-b);
+  let msg = "";
+  if (rows.length < 2){
+    msg = "<b>只有 1 条数据。</b>单条数据只能把 c 定在 4 倍范围内。至少再测一条，"
+        + "而且要和它落在<b>折数变化的两侧</b>。";
+  } else if (ns.length < 2){
+    msg = `<b>所有数据的折数都是 ${ns[0]} 次。</b>这样只能把 c 定在 4 倍范围内——`
+        + `因为折数相同的两条数据，给的是同一格子里的信息。<br>`
+        + `<b>关键动作：找到折数变化的长度，在它两侧各测一条。</b>`
+        + `比如 <span class="mono">L = 200 mm 只能折 5 次、L = 210 mm 能折 6 次</span>，`
+        + `这两条一夹，范围立刻收窄到几个百分点。`;
+  } else if (ns.length === 2){
+    msg = `你已经覆盖了 ${ns[0]} 次和 ${ns[1]} 次两个折数，c 被夹得比较紧了。<br>`
+        + `想再窄一点：在 <b>${ns[0]} → ${ns[0]+1}</b> 和 <b>${ns[1]} → ${ns[1]+1}</b> `
+        + `两个边界处，各用二分法把“刚好够折”的长度再逼近一些。`;
+  } else {
+    msg = `已经覆盖了 ${ns.length} 个不同折数（${ns.join("、")} 次），信息量很够。<br>`
+        + `下一步可以拿这个 c 去预测一个没测过的长度，再做一次实验验证——`
+        + `去④预测器看看。`;
+  }
+  box.innerHTML = '<div class="out">' + msg + '</div>';
+}
+
+/* ---------- ③ 回验 ---------- */
+function nmax(r, c, b){
+  let n = 0;
+  while (n < 60 && c * Math.pow(b, n + 1) <= r) n++;
+  return n;
+}
+function renderVerify(){
+  const rows = validRows();
+  const box = $("verify");
+  if (rows.length < 2){ box.innerHTML = '<div class="note">至少需要 2 条数据。</div>'; return; }
+  const { lo, hi, ok } = intersect(rows, BASE);
+  if (!ok){ box.innerHTML = '<div class="out bad">数据本身互相矛盾，无法回验。</div>'; return; }
+  let h = '<table><thead><tr><th>纸条</th><th>L/t</th><th>实测 n</th>'
+        + '<th>模型预测的折数范围</th><th>判定</th></tr></thead><tbody>';
+  let hit = 0;
+  for (const d of rows){
+    const r = d.L / d.t;
+    const nMin = nmax(r, hi, BASE);   // c 取上界 → 折得最少
+    const nMax = nmax(r, lo, BASE);   // c 取下界 → 折得最多
+    const good = (d.n >= nMin && d.n <= nMax);
+    if (good) hit++;
+    h += `<tr class="${good ? "ok" : "bad"}"><td>${d.name || "—"}</td>
+      <td class="mono">${fmt(r,0)}</td><td>${d.n}</td>
+      <td>${nMin} ～ ${nMax}</td>
+      <td>${good ? "✓ 符合" : "✗ 不符"}</td></tr>`;
+  }
+  h += "</tbody></table>";
+  const pct = Math.round(100 * hit / rows.length);
+  h += `<div class="out ${hit === rows.length ? "good" : "warn"}" style="margin-top:12px">
+    <b>${hit} / ${rows.length} 条吻合（${pct}%）</b><br>
+    ${hit === rows.length
+      ? "全部吻合——这个模型在你的数据上站得住。"
+      : "有不符的条目。若是个别不符，多半是那一次测量的判定偏了；若大面积不符，去下面看看底数是不是 4。"}
+    </div>`;
+  box.innerHTML = h;
+}
+
+/* ---------- ③ c 的合理性 ---------- */
+const C_LO = 0.3, C_HI = 1.5;      /* 普通纸张的常见范围（经验参考）*/
+function renderSanity(){
+  const rows = validRows();
+  const cv = $("cvScale"), g = cv.getContext("2d");
+  const box = $("outSanity");
+  const W = cv.width, H = cv.height;
+  g.clearRect(0, 0, W, H);
+  if (rows.length < 2){
+    box.className = "out warn";
+    box.innerHTML = "至少需要 2 条数据。";
+    return;
+  }
+  const it = intersect(rows, BASE);
+  if (!it.ok){
+    box.className = "out bad";
+    box.innerHTML = "数据互相矛盾（见②），c 还没有定出来，无法判读。";
+    return;
+  }
+  const lo = it.lo, hi = it.hi, mid = (lo + hi) / 2, w = hi / lo;
+
+  /* 坐标 */
+  const cmin = Math.min(0.03, lo / 2), cmax = Math.max(30, hi * 2);
+  const x0 = 105, x1 = W - 70;
+  const lg = c => (Math.log10(c) - Math.log10(cmin)) / (Math.log10(cmax) - Math.log10(cmin));
+  const X = c => x0 + (x1 - x0) * lg(c);
+  const barY = 96, barH = 34;
+
+  /* 底带 + 参考带 */
+  g.fillStyle = "#fdf3e3";
+  g.fillRect(x0, barY, x1 - x0, barH);
+  g.fillStyle = "rgba(46,158,91,.20)";
+  g.fillRect(X(C_LO), barY, X(C_HI) - X(C_LO), barH);
+  g.strokeStyle = "#2e9e5b"; g.lineWidth = 1.5;
+  g.strokeRect(X(C_LO), barY, X(C_HI) - X(C_LO), barH);
+
+  /* 细刻度 */
+  g.strokeStyle = "#e6ebf3"; g.lineWidth = 1;
+  for (let e = -2; e <= 2; e++){
+    for (let m = 1; m < 10; m++){
+      const c = m * Math.pow(10, e);
+      if (c < cmin || c > cmax) continue;
+      const x = X(c);
+      g.beginPath(); g.moveTo(x, barY - 7); g.lineTo(x, barY + barH + 7); g.stroke();
+    }
+  }
+  /* 学生的 c 区间 */
+  g.fillStyle = "#1f3564";
+  g.fillRect(X(lo), barY + 7, Math.max(4, X(hi) - X(lo)), barH - 14);
+  /* 中值线 */
+  g.strokeStyle = "#e08a2e"; g.lineWidth = 2.5;
+  g.beginPath(); g.moveTo(X(mid), barY - 16); g.lineTo(X(mid), barY + barH + 16); g.stroke();
+
+  /* 文字 */
+  g.textAlign = "center";
+  g.fillStyle = "#2e9e5b"; g.font = "bold 13.5px 'Microsoft YaHei'";
+  g.fillText("常见范围 " + C_LO + " ~ " + C_HI, (X(C_LO) + X(C_HI)) / 2, barY - 26);
+  g.fillStyle = "#8a93a5"; g.font = "12px 'Cambria Math',serif";
+  [0.03,0.1,0.3,1,3,10,30].forEach(c => {
+    if (c >= cmin && c <= cmax) g.fillText(fmt(c), X(c), barY + barH + 30);
+  });
+  g.fillStyle = "#1f3564"; g.font = "bold 14px 'Microsoft YaHei'"; g.textAlign = "left";
+  g.fillText("你测出的 c", x0, 30);
+  g.fillStyle = "#e08a2e";
+  g.fillText("c ≈ " + fmt(mid, 4), X(mid) + 8, 30);
+
+  /* 判读 */
+  let cls, verdict, why;
+  if (mid < 0.1){ cls = "bad"; verdict = "小得离谱";
+    why = "这个数量级说明数据里有系统性错误，最可能是<b>纸厚测错了一个数量级</b>（比如把 μm 当成 mm），或者把厘米和毫米混了。"; }
+  else if (mid < C_LO){ cls = "warn"; verdict = "偏小";
+    why = "比常见范围小。若纸很软、很薄，或者折痕压得极死，偏小是可能的；但更常见的原因是<b>纸厚量偏大了</b>，或者长度量偏小。"; }
+  else if (mid <= C_HI){ cls = "good"; verdict = "落在常见范围内";
+    why = "数量级正常——这本身就是一次成功的数据检验。"; }
+  else if (mid <= 3){ cls = "warn"; verdict = "偏大";
+    why = "比常见范围大。纸挺度高、层间贴不紧、或者折痕压得不死，都会让 c 变大；但也要先排除<b>纸厚量偏小</b>。"; }
+  else { cls = "bad"; verdict = "大得离谱";
+    why = "这个数量级说明数据里有系统性错误，先查<b>纸厚和长度的单位</b>，再查是不是把“折了几次”多数了一次。"; }
+
+  const span = (lo < C_LO || hi > C_HI)
+    ? "（区间有一部分落在常见范围之外，也一并留意）" : "";
+
+  box.className = "out " + cls;
+  box.innerHTML =
+    `<div class="big">c ≈ ${fmt(mid, 4)}　<span style="font-size:16px">${verdict}</span></div>
+     <div style="margin-top:6px">实测区间 <span class="mono">(${fmt(lo,4)}, ${fmt(hi,4)}]</span>，宽度 <span class="mono">${w.toFixed(2)}</span> 倍。${span}</div>
+     <div class="note" style="font-size:14px;color:#4a5468;margin-top:8px">${why}</div>
+     <div class="note">参考依据：c 打包的是“每往外一层，半径实际多出几个纸厚”。折痕贴得越紧，c 越小；层间有缝、折痕圆钝，c 就变大。普通纸张大致都在 ${C_LO} ~ ${C_HI} 这个量级。</div>`;
+}
+
+/* ---------- ④ 预测器 ---------- */
+function renderPred(){
+  const rows = validRows();
+  const used = $("cUsed"), man = $("manChk").checked;
+  const manual = parseFloat($("manC").value);
+  const it = intersect(rows, BASE);
+  const okData = it.ok;
+
+  /* ---- 顶部：显示本次用哪个 c ---- */
+  let lo, hi, mode;
+  if (man){
+    if (!(manual > 0)){
+      used.className = "out bad";
+      used.innerHTML = "请把手动指定的 c 填成一个正数。";
+      $("outFwd").innerHTML = '<span class="note">—</span>';
+      $("outBack").innerHTML = '<span class="note">—</span>';
+      $("report").value = "（手动 c 无效）";
+      return;
+    }
+    lo = hi = manual; mode = "manual";
+  } else {
+    if (!okData){
+      used.className = "out warn";
+      used.innerHTML = '<span class="note">还没有有效的 c —— 请先在 ② 页把数据录进去。下面用的是占位值 c = 0.50。</span>';
+      lo = hi = 0.5; mode = "none";
+    } else {
+      lo = it.lo; hi = it.hi; mode = "measured";
+    }
+  }
+  const cMid = (lo + hi) / 2;
+
+  if (mode === "manual"){
+    used.className = "out";
+    used.innerHTML =
+      `<div class="big">c = ${fmt(manual, 4)}　<span class="pill o">手动指定</span></div>
+       <div class="note">下面的预测全部用这一个 c 计算，给出单值结果。</div>`;
+    $("manNote").innerHTML = "正在使用手动指定的 c。取消勾选可回到实测区间。";
+  } else if (mode === "measured"){
+    used.className = "out good";
+    used.innerHTML =
+      `<div class="big">c ≈ ${fmt(cMid, 4)}　<span class="pill g">取自实测区间中值</span></div>
+       <div style="margin-top:6px">实测区间 <span class="mono">(${fmt(it.lo,4)}, ${fmt(it.hi,4)}]</span>
+       　宽度 <span class="mono">${(it.hi/it.lo).toFixed(2)}</span> 倍。</div>
+       <div class="note">正算时用<b>两端</b>各算一次给出长度范围；反算时同理给出折数范围。中值 c ≈ ${fmt(cMid,4)} 用于给出单值。</div>`;
+    $("manNote").innerHTML = "不勾选时，用实测区间的<b>两端</b>各算一次，给出一个范围；同时显示中值的单值结果。";
+  } else {
+    $("manNote").innerHTML = "还没有有效数据，先填 ①。";
+  }
+
+  /* ---- 正算 ---- */
+  const n = Math.max(1, parseInt($("pn").value) || 1);
+  const t = parseFloat($("pt").value) || 0.1;
+  const Lof = c => c * Math.pow(BASE, n) * t;
+  const Lmid = Lof(cMid);
+  const fwd = $("outFwd");
+  if (lo === hi){
+    fwd.innerHTML =
+      `<div class="big">${fmt(Lmid, 1)} mm</div>
+       <div style="margin-top:6px">用 <b>c = ${fmt(cMid,4)}</b> 算：折 <b>${n}</b> 次需要 ${fmt(Lmid,1)} mm 的纸（厚度 ${t} mm）。</div>
+       <div class="note">约 ${fmt(Lmid/1000,2)} 米。${story(Lmid)}</div>`;
+  } else {
+    fwd.innerHTML =
+      `<div class="big">${fmt(Lof(lo), 1)} ～ ${fmt(Lof(hi), 1)} mm</div>
+       <div style="margin-top:6px">折 <b>${n}</b> 次最少需要这么长的纸（厚度 ${t} mm）。</div>
+       <div class="note">
+         · 用 c = ${fmt(lo,4)}（下界）算得 <span class="mono">${fmt(Lof(lo),1)} mm</span><br>
+         · 用 c = ${fmt(hi,4)}（上界）算得 <span class="mono">${fmt(Lof(hi),1)} mm</span><br>
+         · 用 c ≈ ${fmt(cMid,4)}（中值）算得 <span class="mono">${fmt(Lmid,1)} mm</span>
+       </div>
+       <div class="note">约 ${fmt(Lof(lo)/1000,2)} ～ ${fmt(Lof(hi)/1000,2)} 米。${story(Lof(hi))}</div>`;
+  }
+
+  /* ---- 反算 ---- */
+  const L = parseFloat($("pL").value) || 1;
+  const t2 = parseFloat($("pLt").value) || 0.1;
+  const r = L / t2;
+  const nMin = nmax(r, hi, BASE);   /* c 取大 → 折得少 */
+  const nMax = nmax(r, lo, BASE);   /* c 取小 → 折得多 */
+  const nMid = nmax(r, cMid, BASE);
+  const back = $("outBack");
+  if (lo === hi){
+    back.innerHTML =
+      `<div class="big">大约 ${nMid} 次</div>
+       <div style="margin-top:6px">用 <b>c = ${fmt(cMid,4)}</b> 算：长 ${L} mm、厚 ${t2} mm 的纸条（L/t = ${fmt(r,0)}）。</div>`;
+  } else {
+    back.innerHTML =
+      `<div class="big">大约 ${nMin} ～ ${nMax} 次</div>
+       <div style="margin-top:6px">长 ${L} mm、厚 ${t2} mm 的纸条（L/t = ${fmt(r,0)}）。</div>
+       <div class="note">
+         · 用 c = ${fmt(hi,4)}（上界）算得 <span class="mono">${nMin} 次</span><br>
+         · 用 c ≈ ${fmt(cMid,4)}（中值）算得 <span class="mono">${nMid} 次</span><br>
+         · 用 c = ${fmt(lo,4)}（下界）算得 <span class="mono">${nMax} 次</span>
+       </div>
+       <div class="note">${nMin === nMax ? "两个端点给出同一个答案，可以放心。" : "c 还没定死，所以次数也有一个范围。"}</div>`;
+  }
+
+  /* ---- 报告 ---- */
+  const cLine = (lo === hi)
+    ? `所取 c：${fmt(cMid,4)}${mode === "manual" ? "（手动指定）" : ""}`
+    : `所取 c：实测区间 (${fmt(lo,4)}, ${fmt(hi,4)}]，中值 c ≈ ${fmt(cMid,4)}（宽度 ${(hi/lo).toFixed(2)} 倍）`;
+
+  $("report").value =
+`【折纸系数 c 的测定】
+模型：L/t ≥ c·4ⁿ（L 纸条长度，t 单层厚度，n 最多能折的次数）
+纸张：单层厚 t = ${fmt(rows[0] ? rows[0].t : 0, 3)} mm
+实验数据（共 ${rows.length} 条）：
+` + rows.map(d => `  · ${d.name || "—"}：L = ${d.L} mm，L/t = ${fmt(d.L/d.t,0)}，最多折 ${d.n} 次`).join("\n")
++ (okData ? `
+
+结果：c ∈ (${fmt(it.lo,4)}, ${fmt(it.hi,4)}]，中值 c ≈ ${fmt(cMid,4)}。
+回验：${(() => { let hit=0; rows.forEach(d=>{const q=d.L/d.t;
+   const a=nmax(q,it.hi,BASE), b=nmax(q,it.lo,BASE); if(d.n>=a&&d.n<=b) hit++;}); return hit; })()} / ${rows.length} 条符合模型。`
+   : "\n结果：（数据尚未形成有效的 c 范围）")
++ `
+
+${cLine}
+
+用这个 c 预测：
+  · 折 ${n} 次需要约 ${lo === hi ? fmt(Lmid,0) + " mm" : fmt(Lof(lo),0) + " ~ " + fmt(Lof(hi),0) + " mm"} 的纸；
+  · 长 ${L} mm、厚 ${t2} mm 的纸大约能折 ${lo === hi ? nMid : nMin + " ~ " + nMax} 次。`;
+}
+
+/* ---------- ① 粘贴导入 ---------- */
+const COL_RULES = [
+  { key: 'skip', re: /L\s*\/\s*t|比值|区间|操作|序号|备注/i },
+  { key: 'name', re: /纸样|纸张|名称|纸条|编号|样品|说明/ },
+  { key: 'n',    re: /折数|次数|最多折|折几/ },
+  { key: 't',    re: /厚度|纸厚|单层厚/ },
+  { key: 'L',    re: /长度/ },
+];
+function esc(s){
+  return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+}
+function isNum(s){ return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(String(s).trim()); }
+function num(s){ return parseFloat(s); }
+
+function splitCells(line){
+  if (line.indexOf('|') >= 0){
+    return line.split('|').map(s => s.trim()).filter(s => s.length > 0);
+  }
+  let parts = line.split(/\t|,|，|;|；|\s{2,}/);
+  /* 没切开时，若按单个空格切能切出两个以上数字，就按空格切 */
+  if (parts.length === 1){
+    const sp = line.split(/\s+/).filter(s => s.length > 0);
+    if (sp.filter(isNum).length >= 2) parts = sp;
+  }
+  return parts.map(s => s.trim()).filter(s => s.length > 0);
+}
+function headerMap(cells){
+  const map = cells.map(c => {
+    for (const r of COL_RULES) if (r.re.test(c)) return r.key;
+    return null;
+  });
+  return map.filter(k => k && k !== 'skip').length >= 2 ? map : null;
+}
+function extractT(line){
+  const m = String(line).match(/(?:单层厚|纸厚|厚度|厚)\s*[tT]?\s*[=＝:：]?\s*([0-9]*\.?[0-9]+)/);
+  if (!m) return null;
+  const v = parseFloat(m[1]);
+  return (v > 0 && v < 5) ? v : null;
+}
+function hintName(line){
+  let s = String(line).split(/[（(]/)[0].trim();
+  s = s.replace(/^表\s*[一二三四五六七八九十\d]+\s*/, '').trim();
+  s = s.replace(/[\s　]+/g, '');
+  if (s.length < 2 || s.length > 24 || isNum(s)) return '';
+  /* 只认“像纸名”的：含纸/卡/膜等字，或者很短 */
+  return (/纸|卡|膜|布|箔|板|皮/.test(s) || s.length <= 6) ? s : '';
+}
+
+function parsePaste(text, dfltT){
+  const rows = [], warn = [];
+  let map = null;
+  let lastT = (dfltT > 0 ? dfltT : 0.1);
+  let lastName = '';
+  String(text || '').split(/\r?\n/).forEach((raw, ln) => {
+    const line = raw.trim();
+    if (!line) return;
+    if (/^[#＃]/.test(line)){                              /* 注释行，但可能是纸名 */
+      const nm0 = hintName(line.replace(/^[#＃]+\s*/, ''));
+      if (nm0) lastName = nm0;
+      const t1 = extractT(line);
+      if (t1 !== null) lastT = t1;
+      return;
+    }
+    if (/^[\|\s:\-–—=+_.]+$/.test(line)) return;           /* markdown 分隔行 */
+
+    /* ---- 紧凑写法：名称 [厚度]: L/n L/n ... ---- */
+    const cm = line.match(/^(.+?)[：:]\s*(.+)$/);
+    if (cm && /[\/／]/.test(cm[2])){
+      const head = cm[1].trim(), body = cm[2];
+      let t0 = extractT(head);
+      if (t0 === null){
+        /* 名称末尾直接跟厚度，如「拷贝纸 0.025」——必须带小数点才算厚度，
+           这样「A4」「A3」这类名称里的数字不会被误当成厚度 */
+        const m2 = head.match(/([0-9]*\.[0-9]+)\s*(?:mm|毫米)?\s*$/);
+        if (m2){ const v = parseFloat(m2[1]); if (v > 0 && v < 1.5) t0 = v; }
+      }
+      if (t0 !== null) lastT = t0;
+      let nm = hintName(head) || head.replace(/[\s　]+/g, '');
+      if (t0 !== null) nm = nm.replace(/[tT]?\s*[=＝]?\s*\d*\.?\d+\s*(mm|毫米)?$/, '').trim();
+      let ok = 0;
+      body.split(/[\s,，]+/).filter(s => s.length).forEach(p => {
+        const w = p.split(/[\/／]/).map(s => s.trim());
+        if (w.length >= 2 && isNum(w[0]) && isNum(w[1])){
+          rows.push({ name: nm, L: num(w[0]), t: lastT, n: Math.round(num(w[1])) });
+          ok++;
+        }
+      });
+      if (ok){ if (nm) lastName = nm; return; }
+    }
+
+    const cells = splitCells(line);
+    const nums = cells.filter(isNum);
+
+    /* ---- 表头行 ---- */
+    const hm = headerMap(cells);
+    if (hm){
+      map = hm;
+      const t0 = extractT(line);
+      if (t0 !== null) lastT = t0;
+      const i = hm.indexOf('name');
+      if (i >= 0) lastName = cells[i];
+      return;
+    }
+    /* ---- 纯提示行（有厚度、没有数据）---- */
+    if (nums.length === 0){
+      const t0 = extractT(line);
+      if (t0 !== null) lastT = t0;
+      const nm = hintName(line);
+      if (nm) lastName = nm;
+      return;
+    }
+
+    /* ---- 普通数据行 ---- */
+    let L = null, t = null, n = null, nm = '';
+    if (map && cells.length === map.length){
+      cells.forEach((c, i) => {
+        const k = map[i];
+        if (k === 'L' && isNum(c)) L = num(c);
+        else if (k === 't' && isNum(c)) t = num(c);
+        else if (k === 'n' && isNum(c)) n = Math.round(num(c));
+        else if (k === 'name') nm = c;
+      });
+    }
+    if (L === null || n === null){
+      const ns = nums.slice();
+      /* 去掉可能的序号列：4 个数、第 1 个是小整数、第 3 个像厚度 */
+      if (ns.length >= 4 && Number.isInteger(num(ns[0])) && num(ns[0]) <= 40 && /\./.test(ns[2])) ns.shift();
+      if (ns.length >= 3){ L = num(ns[0]); t = num(ns[1]); n = Math.round(num(ns[2])); }
+      else if (ns.length === 2){ L = num(ns[0]); n = Math.round(num(ns[1])); }
+      const txt = cells.filter(c => !isNum(c)).join('');
+      if (txt) nm = txt;
+    }
+    if (nm) lastName = nm; else nm = lastName;
+
+    if (L === null || n === null || !(L > 0) || !(n >= 0)){
+      warn.push('第 ' + (ln + 1) + ' 行没读懂：' + line.slice(0, 36));
+      return;
+    }
+    if (t === null || !(t > 0)) t = lastT;
+    rows.push({ name: nm, L: L, t: t, n: n });
+  });
+  return { rows: rows, warn: warn };
+}
+
+function renderPaste(msg){
+  const box = $('pasteBox'), prev = $('pastePreview'), stat = $('pasteStat');
+  const txt = box.value;
+  if (!txt.trim()){
+    stat.innerHTML = msg || '还没有内容。';
+    prev.innerHTML = '';
+    return;
+  }
+  const res = parsePaste(txt, parseFloat($('pasteT').value));
+  const rows = res.rows, warn = res.warn;
+  stat.innerHTML = (rows.length
+      ? '识别出 <b style="color:#0e9e9e">' + rows.length + '</b> 条数据'
+        + (warn.length ? '，另有 ' + warn.length + ' 行没读懂' : '，全部读懂')
+      : '没有识别出数据，请检查格式')
+    + (msg ? '<br><b style="color:#2e9e5b">' + esc(msg) + '</b>' : '');
+
+  let h = '';
+  if (rows.length){
+    h += '<table><thead><tr><th>纸样</th><th>长度 L (mm)</th><th>厚度 t (mm)</th>'
+       + '<th>折数 n</th><th>L/t</th></tr></thead><tbody>';
+    rows.forEach(r => {
+      h += '<tr><td>' + esc(r.name || '—') + '</td>'
+         + '<td class="mono">' + r.L + '</td>'
+         + '<td class="mono">' + r.t + '</td>'
+         + '<td>' + r.n + '</td>'
+         + '<td class="mono">' + Number((r.L / r.t).toFixed(0)).toLocaleString() + '</td></tr>';
+    });
+    h += '</tbody></table>';
+    h += '<div class="note">确认无误后，点上面的「导入」按钮把它写进下面的表格。</div>';
+  }
+  if (warn.length){
+    h += '<div class="out warn" style="margin-top:10px"><b>下面这些行没读懂</b>'
+       + '（已跳过，不影响其余数据）：<br>'
+       + warn.map(w => '· ' + esc(w)).join('<br>') + '</div>';
+  }
+  prev.innerHTML = h;
+}
+
+function doImport(replace){
+  const res = parsePaste($('pasteBox').value, parseFloat($('pasteT').value));
+  if (!res.rows.length){ renderPaste('没有识别出数据，请先检查上面的预览。'); return; }
+  if (replace) DATA = res.rows.map(r => Object.assign({}, r));
+  else res.rows.forEach(r => DATA.push(Object.assign({}, r)));
+  refreshAll();
+  renderPaste((replace ? '已替换为 ' : '已追加 ') + res.rows.length + ' 条，'
+    + '可在下面的表格里逐格修改。');
+}
+
+/* ---------- 刷新 ---------- */
+/* 输入时只刷新各面板，绝不动表格本身（否则会丢焦点） */
+function refreshPanels(){
+  renderRowInfo();
+  renderC();
+  renderVerify();
+  renderSanity();
+  renderPred();
+  renderPaste();
+}
+function refreshLight(){ refreshPanels(); }
+function refreshAll(){
+  renderTable2();
+  refreshPanels();
+}
+
+/* ---------- 事件 ---------- */
+document.querySelectorAll("nav button").forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll("nav button").forEach(x => x.classList.remove("on"));
+    document.querySelectorAll("section").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    $(b.dataset.t).classList.add("on");
+    refreshAll();
+  };
+});
+$("addRow").onclick = () => { DATA.push({name:"", L:0, t:0.10, n:0}); refreshAll(); };
+$("clearAll").onclick = () => { DATA = []; refreshAll(); };
+$("loadDemo").onclick = () => {
+  DATA = DEMO.map(r => ({name:r[0], L:r[1], t:r[2], n:r[3]}));
+  refreshAll();
+};
+/* 粘贴导入 */
+$("pasteBox").addEventListener("input", () => renderPaste());
+$("pasteT").addEventListener("input", () => renderPaste());
+$("pasteAppend").onclick = () => doImport(false);
+$("pasteReplace").onclick = () => doImport(true);
+$("pasteClear").onclick = () => { $("pasteBox").value = ""; renderPaste(); };
+["pn","pt","pL","pLt"].forEach(id => $(id).addEventListener("input", renderPred));
+$("manChk").onchange = () => {
+  $("manC").disabled = !$("manChk").checked;
+  renderPred();
+};
+$("manC").addEventListener("input", renderPred);
+$("copyBtn").onclick = () => {
+  const ta = $("report");
+  ta.select();
+  try { document.execCommand("copy"); $("copyBtn").textContent = "已复制 ✓";
+        setTimeout(() => $("copyBtn").textContent = "复制结论", 1500); }
+  catch(e){ $("copyBtn").textContent = "请手动复制"; }
+};
+
+/* ==================== 实时同步（新增） ====================
+   老师 = 用 localhost 打开 → 能删任意一条、能清空
+   学生 = 从局域网 IP 打开 → 只能追加；只能撤回自己提交的
+   身份由服务器按「请求从哪来」判定，前端只负责显示。
+   ======================================================== */
+var ROLE = "student";
+var MYCID = "";
+var MYGROUP = 0;
+var LASTVER = -1;
+var FAILS = 0;
+var POLL_MS = 1500;
+
+function lsGet(k){ try { return localStorage.getItem(k) || ""; } catch(e){ return ""; } }
+function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+
+function initMe(){
+  MYCID = lsGet("fp_cid");
+  if (!MYCID){
+    MYCID = "c" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    lsSet("fp_cid", MYCID);
+  }
+  MYGROUP = parseInt(lsGet("fp_group") || "0", 10) || 0;
+  if (MYGROUP < 1 || MYGROUP > 6) MYGROUP = 0;
+}
+
+function post(url, obj){
+  obj.c = MYCID;
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(obj)
+  }).then(function(r){ return r.json(); });
+}
+
+function setSync(state, text){
+  $("syncDot").className = "dot " + (state || "");
+  $("syncText").textContent = text;
+}
+
+function renderRole(){
+  var rb = $("syncRole");
+  rb.textContent = (ROLE === "teacher") ? "老师端" : "学生端";
+  rb.className = "rolebadge " + (ROLE === "teacher" ? "teacher" : "student");
+  $("groupTitle").textContent = (ROLE === "teacher") ? "要为第几组代填？" : "你是第几组？";
+  $("clearAll").style.display = (ROLE === "teacher") ? "inline-block" : "none";
+  var note;
+  if (ROLE === "teacher") note = "你是老师端 —— 能删任意一条，也能清空全部。";
+  else if (MYGROUP) note = "你是第 " + MYGROUP + " 组，只能撤回自己提交的那条。";
+  else note = "请先在下面选你是第几组。";
+  $("tblNote").textContent = note;
+}
+
+function renderGroupPick(){
+  var box = $("groupPick");
+  box.innerHTML = "";
+  for (var g = 1; g <= 6; g++){
+    (function(gg){
+      var b = document.createElement("button");
+      b.textContent = gg + " 组";
+      if (MYGROUP === gg) b.className = "on";
+      b.onclick = function(){
+        MYGROUP = gg;
+        lsSet("fp_group", String(gg));
+        renderGroupPick();
+        renderRole();
+      };
+      box.appendChild(b);
+    })(g);
+  }
+}
+
+function poll(){
+  fetch("api/data?c=" + encodeURIComponent(MYCID) + "&_=" + Date.now(), {cache: "no-store"})
+    .then(function(r){
+      if (!r.ok) throw new Error("http " + r.status);
+      return r.json();
+    })
+    .then(function(d){
+      FAILS = 0;
+      ROLE = d.role || "student";
+      if (d.version !== LASTVER){          /* 只在数据真的变了才重画 */
+        LASTVER = d.version;
+        DATA = d.rows || [];
+        refreshAll();
+        renderRole();
+      }
+      var gs = {};
+      DATA.forEach(function(x){ gs[x.group] = 1; });
+      setSync("ok", "已同步 · " + Object.keys(gs).length + " 组 / " + DATA.length + " 条数据");
+    })
+    .catch(function(){
+      FAILS++;
+      if (FAILS >= 2) setSync("bad", "连接断开 —— 请检查是不是还连在同一个热点上");
+    });
+}
+
+function serverDel(id){
+  post("api/del", { id: id }).then(function(r){
+    if (!r.ok){ alert(r.err || "删除失败"); return; }
+    poll();
+  }).catch(function(){ alert("网络不通，没能删除"); });
+}
+
+function submitRow(){
+  var msg = $("submitMsg");
+  function bad(s){ msg.className = "submsg bad"; msg.textContent = s; }
+  if (!MYGROUP){ bad("请先在上面选组号"); return; }
+  var L = parseFloat($("fL").value);
+  var t = parseFloat($("fT").value);
+  var n = parseInt($("fN").value, 10);
+  if (!(L > 0)){ bad("长度 L 要填一个正数"); return; }
+  if (!(t > 0)){ bad("厚度 t 要填一个正数"); return; }
+  if (!(n >= 0)){ bad("折数 n 要填一个非负整数"); return; }
+  $("submitBtn").disabled = true;
+  msg.className = "submsg"; msg.textContent = "提交中…";
+  post("api/add", { group: MYGROUP, L: L, t: t, n: n }).then(function(r){
+    $("submitBtn").disabled = false;
+    if (!r.ok){ bad(r.err || "提交失败"); return; }
+    msg.className = "submsg ok";
+    msg.textContent = "已提交（第 " + MYGROUP + " 组：" + L + " mm / " + t + " mm / " + n + " 次）";
+    $("fL").value = ""; $("fN").value = "";
+    poll();
+  }).catch(function(){
+    $("submitBtn").disabled = false;
+    bad("网络不通，没提交上");
+  });
+}
+
+$("submitBtn").onclick = submitRow;
+["fL", "fT", "fN"].forEach(function(id){
+  $(id).addEventListener("keydown", function(e){ if (e.key === "Enter") submitRow(); });
+});
+$("clearAll").onclick = function(){
+  if (!confirm("确定清空全班所有数据？这一步不能撤销。")) return;
+  post("api/clear", {}).then(function(r){
+    if (!r.ok){ alert(r.err || "清空失败"); return; }
+    poll();
+  }).catch(function(){ alert("网络不通"); });
+};
+document.addEventListener("visibilitychange", function(){
+  if (!document.hidden) poll();
+});
+
+/* 启动 */
+initMe();
+renderGroupPick();
+DATA = [];
+refreshAll();
+renderRole();
+poll();
+setInterval(poll, POLL_MS);
+</script>
+</body>
+</html>
