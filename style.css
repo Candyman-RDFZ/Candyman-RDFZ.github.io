@@ -93,6 +93,15 @@ footer a:hover {
     word-break: break-word;
 }
 
+.img_title {
+	font-size: 40px;
+	margin: 10px auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: fit-content;
+}
+
 footer {
     width: 100%;
     background-color: #333;
