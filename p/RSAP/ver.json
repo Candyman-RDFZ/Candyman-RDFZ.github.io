@@ -1,4 +1,4 @@
 {
-	"ver": "1.2a",
-	"changes": "<ul><li>Removed logging to file feature.</li></ul>"
+	"ver": "1.4a",
+	"changes": "<ul><li>Removed potential memory-leak bug</li><li>Updated default weight in dialogs</li></ul>"
 }
