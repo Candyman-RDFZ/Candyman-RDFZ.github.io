@@ -93,6 +93,12 @@ footer a:hover {
     word-break: break-word;
 }
 
+.entry img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
 .imgtitle {
 	font-size: 40px;
 	margin: 10px auto;
