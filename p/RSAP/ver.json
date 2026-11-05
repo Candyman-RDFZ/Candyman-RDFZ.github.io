@@ -1,4 +1,4 @@
 {
-	"ver": "1.1a",
-	"changes": "<ul><li>Deleted special font of label in settings dialog</li><li>Removed row number in name table</li></ul>"
+	"ver": "1.2a",
+	"changes": "<ul><li>Removed logging to file feature.</li></ul>"
 }
