@@ -1,4 +1,4 @@
 {
-	"ver": "1.0a",
-	"changes": "<ul><li>Initial alpha release of RSAP</li></ul>"
+	"ver": "1.1a",
+	"changes": "<ul><li>Deleted special font of label in settings dialog</li><li>Removed row number in name table</li></ul>"
 }
