@@ -1,4 +1,4 @@
 {
-	"ver": "1.4a",
-	"changes": "<ul><li>Removed potential memory-leak bug</li><li>Updated default weight in dialogs</li></ul>"
+	"ver": "1.5a",
+	"changes": "<ul><li>Updated weight/height settings to QSpinBox</li><li>Fixed bug relating to check function not called when editing</li><li>Added lower bound 0 in the edit dialog</li></ul>"
 }
